@@ -44,10 +44,7 @@ fun CharactersScreen(onCharacterClick: (Int) -> Unit) {
 @Composable
 private fun CharacterRow(ch: Character, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SubcomposeAsyncImage(
@@ -59,16 +56,12 @@ private fun CharacterRow(ch: Character, onClick: () -> Unit) {
             when (painter.state) {
                 is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
                 else -> Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clip(CircleShape)
+                    modifier = Modifier.matchParentSize().clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary)
                 )
             }
         }
-
         Spacer(Modifier.width(12.dp))
-
         Column(Modifier.weight(1f)) {
             Text(ch.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text("${ch.species} - ${ch.status}", style = MaterialTheme.typography.bodyMedium)

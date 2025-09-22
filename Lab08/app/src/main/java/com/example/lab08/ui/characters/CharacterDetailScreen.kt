@@ -1,13 +1,13 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
-package com.example.lab08.ui.detail
+package com.example.lab08.ui.characters
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -31,18 +31,10 @@ fun CharacterDetailScreen(id: Int, onBack: () -> Unit) {
             TopAppBar(
                 title = { Text("Character details") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
-                    }
+                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Back") }
                 }
             )
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
+            Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 SubcomposeAsyncImage(
                     model = ch.image,
                     contentDescription = ch.name,
@@ -52,29 +44,25 @@ fun CharacterDetailScreen(id: Int, onBack: () -> Unit) {
                     when (painter.state) {
                         is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
                         else -> Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .clip(CircleShape)
+                            modifier = Modifier.matchParentSize().clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.primary)
                         )
                     }
                 }
-
                 Spacer(Modifier.height(16.dp))
                 Text(ch.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(24.dp))
-                AttributeRow("Species:", ch.species)
-                AttributeRow("Status:", ch.status)
-                AttributeRow("Gender:", ch.gender)
+                RowLine("Species:", ch.species)
+                RowLine("Status:", ch.status)
+                RowLine("Gender:", ch.gender)
             }
         }
     }
 }
 
-@Composable
-private fun AttributeRow(label: String, value: String) {
-    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
-        Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-        Text(value, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+@Composable private fun RowLine(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Text(label, modifier = Modifier.weight(1f))
+        Text(value, modifier = Modifier.weight(1f))
     }
 }

@@ -9,40 +9,53 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.lab08.R
 
 @Composable
-fun LoginScreen(onStart: () -> Unit) {
-    Surface(Modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Pon un PNG en res/drawable con este nombre
-            Image(
-                painter = painterResource(id = R.drawable.rick_morty_logo),
-                contentDescription = "Rick & Morty",
-                modifier = Modifier.fillMaxWidth(0.7f).aspectRatio(2.2f),
-                contentScale = ContentScale.Fit
-            )
-
-            Spacer(Modifier.height(40.dp))
-
-            Button(onClick = onStart, modifier = Modifier.fillMaxWidth(0.6f)) {
-                Text("Entrar")
+fun LoginScreen(
+    userName: String,
+    userId: String = "24128",                // cambia si necesitas
+    onGoToPeople: () -> Unit,                // navegación al flujo principal
+    onGoToLocations: () -> Unit = {}         // opcional (no se usa en este mock)
+) {
+    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Box(Modifier.fillMaxSize()) {
+            // Centro: Logo y botón "Entrar"
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center)
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.rick_morty_logo),
+                    contentDescription = "Rick & Morty",
+                    modifier = Modifier.size(180.dp)
+                )
+                Spacer(Modifier.height(24.dp))
+                Button(
+                    onClick = onGoToPeople,
+                    modifier = Modifier
+                        .fillMaxWidth(0.65f)
+                        .height(44.dp)
+                ) {
+                    Text("Entrar")
+                }
             }
 
-            Spacer(Modifier.height(60.dp))
-
+            // Abajo: nombre y carné (alineado al centro)
             Text(
-                "Diego Sebastián Guevara - 24128 ",
+                text = "$userName  -  #$userId",
                 style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 24.dp)
             )
         }
     }

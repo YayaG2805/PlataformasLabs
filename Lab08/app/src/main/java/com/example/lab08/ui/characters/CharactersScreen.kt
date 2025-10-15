@@ -2,77 +2,61 @@
 
 package com.example.lab08.ui.characters
 
-import androidx.compose.foundation.background
+import android.app.Activity
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
-import com.example.lab08.data.Character
-import com.example.lab08.data.CharacterDb
+import coil.compose.rememberAsyncImagePainter
+import com.example.lab08.data.room.entities.CharacterEntity
+import com.example.lab08.ui.common.Error
+import com.example.lab08.ui.common.Loading
 
 @Composable
-fun CharactersScreen(onCharacterClick: (Int) -> Unit) {
-    val db = remember { CharacterDb() }
-    val characters = remember { db.getAllCharacters() }
+fun CharactersScreen(
+    onCharacterClick: (Int) -> Unit,
+    onLocationsClick: () -> Unit,   // (se usan en la BottomBar global)
+    onProfileClick: () -> Unit      // (se usan en la BottomBar global)
+) {
+    val context = LocalContext.current
+    val vm = remember { CharactersViewModel(context.applicationContext as android.app.Application) }
+    val s by vm.state.collectAsState()
 
-    Surface(Modifier.fillMaxSize()) {
-        Column {
-            TopAppBar(title = { Text("Characters") })
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(characters) { ch ->
-                    CharacterRow(ch) { onCharacterClick(ch.id) }
-                    Divider()
-                }
-            }
-        }
-    }
-}
+    // En la lista, "back" cierra la app
+    BackHandler { (context as? Activity)?.finish() }
 
-@Composable
-private fun CharacterRow(ch: Character, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        SubcomposeAsyncImage(
-            model = ch.image,
-            contentDescription = ch.name,
-            modifier = Modifier.size(56.dp).clip(CircleShape),
-            contentScale = ContentScale.Crop
-        ) {
-            when (painter.state) {
-                is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                else -> Box(
+    when {
+        s.isLoading -> Loading()
+        s.hasError  -> Error("Error cargando personajes", onRetry = { vm.reload() })
+        else -> LazyColumn {
+            items(items = s.data, key = { it.id }) { ch: CharacterEntity ->
+                ListItem(
+                    headlineContent   = { Text(ch.name, style = MaterialTheme.typography.titleMedium) },
+                    supportingContent = { Text("${ch.species} • ${ch.status}") },
+                    leadingContent    = {
+                        Image(
+                            painter = rememberAsyncImagePainter(ch.imageUrl),
+                            contentDescription = ch.name,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    },
                     modifier = Modifier
-                        .matchParentSize()
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable { onCharacterClick(ch.id) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 )
+                Divider()
             }
-        }
-
-        Spacer(Modifier.width(12.dp))
-
-        Column(Modifier.weight(1f)) {
-            Text(ch.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("${ch.species} - ${ch.status}", style = MaterialTheme.typography.bodyMedium)
-            Text(ch.gender, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

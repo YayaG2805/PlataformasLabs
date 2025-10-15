@@ -28,11 +28,7 @@ fun CharacterDetailScreen(id: Int, onBack: () -> Unit) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Character details") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } }
             )
         }
     ) { inner ->

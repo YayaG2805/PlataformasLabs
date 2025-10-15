@@ -24,11 +24,7 @@ fun LocationDetailScreen(id: Int, onBack: () -> Unit) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Location details") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) } }
             )
         }
     ) { inner ->

@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
 // Helper reutilizable
-private inline fun <reified T> routeOf(): String = T::class.qualifiedName!!
 
 @Composable
 fun BottomBar(

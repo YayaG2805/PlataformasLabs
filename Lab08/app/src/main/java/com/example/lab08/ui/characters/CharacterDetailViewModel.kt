@@ -1,39 +1,40 @@
 package com.example.lab08.ui.characters
 
-import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lab08.data.CharacterDb
+import com.example.lab08.data.repository.ServiceLocator
+import com.example.lab08.data.room.entities.CharacterEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
-class CharacterDetailViewModel(
-    private val savedStateHandle: SavedStateHandle,
-    private val db: CharacterDb = CharacterDb()
-) : ViewModel() {
+data class CharacterDetailState(
+    val isLoading: Boolean = true,
+    val hasError: Boolean = false,
+    val data: CharacterEntity? = null
+)
 
+class CharacterDetailViewModel(app: Application, private val id: Int) : AndroidViewModel(app) {
+    private val repo = ServiceLocator.provideCharactersRepo(app)
     private val _state = MutableStateFlow(CharacterDetailState())
-    val state = _state.asStateFlow()
+    val state: StateFlow<CharacterDetailState> = _state
 
-    private val id: Int = savedStateHandle.get<Int>("id") ?: -1
+    init { reload() }
 
-    init { load() }
-
-    fun load() {
-        _state.value = CharacterDetailState(isLoading = true)
+    fun reload() {
         viewModelScope.launch {
-            delay(2000) // 2 s
-            val n = Random.nextInt(1, 11)
-            if (n % 2 == 0) {
-                _state.value = CharacterDetailState(
-                    isLoading = false,
-                    data = db.getCharacterById(id)
-                )
-            } else {
+            _state.value = CharacterDetailState(isLoading = true)
+            delay(1200) // simulación de carga
+
+            if (id % 2 != 0) { // impar => error
                 _state.value = CharacterDetailState(isLoading = false, hasError = true)
+                return@launch
+            }
+            repo.getById(id).collectLatest { item ->
+                _state.value = CharacterDetailState(isLoading = false, data = item)
             }
         }
     }

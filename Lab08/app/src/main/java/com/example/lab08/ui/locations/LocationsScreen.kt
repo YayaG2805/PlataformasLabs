@@ -7,42 +7,43 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.lab08.ui.common.ErrorView
-import com.example.lab08.ui.common.LoadingView
+import com.example.lab08.ui.common.Error
+import com.example.lab08.ui.common.Loading
 
 @Composable
 fun LocationsScreen(
     onLocationClick: (Int) -> Unit,
-    vm: LocationsViewModel = viewModel()
+    onCharactersClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
-    val state by vm.state.collectAsState()
+    val context = LocalContext.current
+    val vm = remember { LocationsViewModel(context.applicationContext as android.app.Application) }
+    val s by vm.state.collectAsState()
 
-    Surface(Modifier.fillMaxSize()) {
-        Column {
-            TopAppBar(title = { Text("Ubicaciones") })
-
-            when {
-                state.isLoading -> LoadingView("Cargando")
-                state.hasError  -> ErrorView("Error al obtener ubicaciones. Intenta de nuevo.") { vm.load() }
-                else -> {
-                    LazyColumn(Modifier.fillMaxSize()) {
-                        items(state.data) { loc ->
-                            ListItem(
-                                headlineContent = { Text(loc.name) },
-                                supportingContent = { Text("${loc.type} • ${loc.dimension}") },
-                                modifier = Modifier
-                                    .clickable { onLocationClick(loc.id) }
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                            Divider()
-                        }
-                    }
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(selected = false, onClick = onCharactersClick, label = { Text("Characters") }, icon = { })
+                NavigationBarItem(selected = true,  onClick = {},               label = { Text("Locations")  }, icon = { })
+                NavigationBarItem(selected = false, onClick = onProfileClick,   label = { Text("Profile")    }, icon = { })
+            }
+        }
+    ) { inner ->
+        when {
+            s.isLoading -> Loading(Modifier.padding(inner))
+            s.hasError  -> Error("Error cargando locations", onRetry = { vm.reload() }, modifier = Modifier.padding(inner))
+            else -> LazyColumn(Modifier.padding(inner)) {
+                items(items = s.data, key = { it.id }) { loc ->
+                    ListItem(
+                        headlineContent   = { Text(loc.name) },
+                        supportingContent = { Text(loc.type) },
+                        modifier = Modifier.clickable { onLocationClick(loc.id) }
+                    )
+                    Divider()
                 }
             }
         }

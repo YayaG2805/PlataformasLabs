@@ -1,34 +1,42 @@
 package com.example.lab08.ui.locations
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.lab08.data.LocationDb
+import com.example.lab08.data.repository.ServiceLocator
+import com.example.lab08.data.room.entities.LocationEntity
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlin.random.Random
 
-class LocationsViewModel(
-    private val db: LocationDb = LocationDb()
-) : ViewModel() {
+data class LocationsState(
+    val isLoading: Boolean = true,
+    val hasError: Boolean = false,
+    val data: List<LocationEntity> = emptyList()
+)
+
+class LocationsViewModel(app: Application) : AndroidViewModel(app) {
+    private val repo = ServiceLocator.provideLocationsRepo(app)
     private val _state = MutableStateFlow(LocationsState())
-    val state = _state.asStateFlow()
+    val state: StateFlow<LocationsState> = _state
 
-    init { load() }
+    init { reload() }
 
-    fun load() {
-        _state.value = LocationsState(isLoading = true)
+    fun reload() {
         viewModelScope.launch {
-            delay(4000)
-            val n = Random.nextInt(1, 11)
-            if (n % 2 == 0) {
-                _state.value = LocationsState(
-                    isLoading = false,
-                    data = db.getAllLocations()
-                )
-            } else {
+            _state.value = LocationsState(isLoading = true)
+            delay(1500) // simulación de carga
+
+            val seed = (System.currentTimeMillis() / 1000).toInt()
+            if (seed % 2 != 0) {
                 _state.value = LocationsState(isLoading = false, hasError = true)
+                return@launch
+            }
+
+            repo.getAll().collectLatest { list ->
+                _state.value = LocationsState(isLoading = false, data = list)
             }
         }
     }

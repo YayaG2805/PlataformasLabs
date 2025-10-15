@@ -2,50 +2,73 @@
 
 package com.example.lab08.ui.characters
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.lab08.ui.common.ErrorView
-import com.example.lab08.ui.common.LoadingView
+import coil.compose.rememberAsyncImagePainter
+import com.example.lab08.ui.common.Error
+import com.example.lab08.ui.common.Loading
 
 @Composable
-fun CharacterDetailScreen(
-    onBack: () -> Unit,
-    vm: CharacterDetailViewModel = viewModel()
-) {
-    val state by vm.state.collectAsState()
+fun CharacterDetailScreen(id: Int, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val vm = remember { CharacterDetailViewModel(context.applicationContext as android.app.Application, id) }
+    val s by vm.state.collectAsState()
 
-    Surface(Modifier.fillMaxSize()) {
-        Column {
-            TopAppBar(
-                title = { Text("Detalle de personaje") },
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Character details") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 }
             )
-
-            when {
-                state.isLoading -> LoadingView("Cargando")
-                state.hasError  -> ErrorView("No se pudo cargar el personaje.", onRetry = { vm.load() })
-                else -> {
-                    val ch = state.data!!
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(ch.name, style = MaterialTheme.typography.headlineSmall)
-                        Text("${ch.species} • ${ch.status}")
-                        Text("Género: ${ch.gender}")
-                        // Agrega imagen/otros campos si quieres
-                    }
+        }
+    ) { inner ->
+        when {
+            s.isLoading -> Loading(Modifier.padding(inner))
+            s.hasError || s.data == null -> Error("No encontrado", onRetry = { vm.reload() }, modifier = Modifier.padding(inner))
+            else -> {
+                val ch = s.data!!
+                Column(
+                    modifier = Modifier
+                        .padding(inner)
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = rememberAsyncImagePainter(ch.imageUrl),
+                        contentDescription = ch.name,
+                        modifier = Modifier.size(140.dp).clip(CircleShape)
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(ch.name, style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.height(24.dp))
+                    AttributeRow("Species:", ch.species)
+                    AttributeRow("Status:",  ch.status)
+                    AttributeRow("Gender:",  ch.gender)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AttributeRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }

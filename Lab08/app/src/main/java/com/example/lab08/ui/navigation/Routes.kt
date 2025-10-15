@@ -2,6 +2,7 @@ package com.example.lab08.ui.navigation
 
 import kotlinx.serialization.Serializable
 
+@Serializable object SplashRoute            // NUEVO (chequeo DataStore)
 @Serializable object LoginRoute
 @Serializable object ProfileRoute
 

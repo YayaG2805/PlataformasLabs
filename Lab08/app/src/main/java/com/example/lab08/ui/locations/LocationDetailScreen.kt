@@ -4,47 +4,60 @@ package com.example.lab08.ui.locations
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.lab08.ui.common.ErrorView
-import com.example.lab08.ui.common.LoadingView
+import com.example.lab08.ui.common.Error
+import com.example.lab08.ui.common.Loading
 
 @Composable
-fun LocationDetailScreen(
-    onBack: () -> Unit,
-    vm: LocationDetailViewModel = viewModel()
-) {
-    val state by vm.state.collectAsState()
+fun LocationDetailScreen(id: Int, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val vm = remember { LocationDetailViewModel(context.applicationContext as android.app.Application, id) }
+    val s by vm.state.collectAsState()
 
-    Surface(Modifier.fillMaxSize()) {
-        Column {
-            TopAppBar(
-                title = { Text("Detalle de ubicación") },
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Location details") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 }
             )
-
-            when {
-                state.isLoading -> LoadingView("Cargando")
-                state.hasError  -> ErrorView("No se pudo cargar la ubicación.", onRetry = { vm.load() })
-                else -> {
-                    val loc = state.data!!
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(loc.name, style = MaterialTheme.typography.headlineSmall)
-                        Text("Tipo: ${loc.type}")
-                        Text("Dimensión: ${loc.dimension}")
-                    }
+        }
+    ) { inner ->
+        when {
+            s.isLoading -> Loading(Modifier.padding(inner))
+            s.hasError || s.data == null -> Error("No encontrado", onRetry = { vm.reload() }, modifier = Modifier.padding(inner))
+            else -> {
+                val l = s.data!!
+                Column(
+                    modifier = Modifier
+                        .padding(inner)
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text("#${l.id} ${l.name}", style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.height(16.dp))
+                    AttributeRow("Type:",      l.type)
+                    AttributeRow("Dimension:", l.dimension)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AttributeRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }

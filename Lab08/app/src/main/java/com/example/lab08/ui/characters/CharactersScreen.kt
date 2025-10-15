@@ -2,73 +2,65 @@
 
 package com.example.lab08.ui.characters
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImagePainter
-import coil.compose.SubcomposeAsyncImage
-import coil.compose.SubcomposeAsyncImageContent
-import com.example.lab08.data.Character
-import com.example.lab08.ui.common.ErrorView
-import com.example.lab08.ui.common.LoadingView
+import coil.compose.rememberAsyncImagePainter
+import com.example.lab08.ui.common.Error
+import com.example.lab08.ui.common.Loading
+import com.example.lab08.data.room.entities.CharacterEntity
 
 @Composable
 fun CharactersScreen(
     onCharacterClick: (Int) -> Unit,
-    vm: CharactersViewModel = viewModel()
+    onLocationsClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
-    val state by vm.state.collectAsState()
+    val context = LocalContext.current
+    val vm = remember { CharactersViewModel(context.applicationContext as android.app.Application) }
+    val s by vm.state.collectAsState()
 
-    Surface(Modifier.fillMaxSize()) {
-        Column {
-            TopAppBar(title = { Text("Personajes") })
+    BackHandler { (context as? Activity)?.finish() }
 
-            when {
-                state.isLoading -> LoadingView("Cargando")
-                state.hasError  -> ErrorView(
-                    "Error al obtener listado de personajes. Intenta de nuevo."
-                ) { vm.load() }
-
-                else -> {
-                    LazyColumn(Modifier.fillMaxSize()) {
-                        items(state.data) { ch ->
-                            CharacterRow(ch) { onCharacterClick(ch.id) }
-                            Divider()
-                        }
-                    }
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(selected = true, onClick = {}, label = { Text("Characters") }, icon = { })
+                NavigationBarItem(selected = false, onClick = onLocationsClick, label = { Text("Locations") }, icon = { })
+                NavigationBarItem(selected = false, onClick = onProfileClick, label = { Text("Profile") }, icon = { })
+            }
+        }
+    ) { inner ->
+        when {
+            s.isLoading -> Loading(Modifier.padding(inner))
+            s.hasError  -> Error("Error cargando personajes", onRetry = { vm.reload() }, modifier = Modifier.padding(inner))
+            else -> LazyColumn(Modifier.padding(inner)) {
+                items(items = s.data, key = { it.id }) { ch: CharacterEntity ->
+                    ListItem(
+                        headlineContent   = { Text(ch.name) },
+                        supportingContent = { Text("${ch.species} • ${ch.status}") },
+                        leadingContent = {
+                            Image(
+                                painter = rememberAsyncImagePainter(ch.imageUrl),
+                                contentDescription = ch.name,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        },
+                        modifier = Modifier.clickable { onCharacterClick(ch.id) }
+                    )
+                    Divider()
                 }
             }
         }
     }
-}
-
-@Composable private fun CharacterRow(ch: Character, onClick: () -> Unit) {
-    ListItem(
-        headlineContent = { Text(ch.name, fontWeight = FontWeight.SemiBold) },
-        supportingContent = { Text("${ch.species} • ${ch.status}") },
-        leadingContent = {
-            SubcomposeAsyncImage(model = ch.image, contentDescription = ch.name, modifier = Modifier.size(48.dp)) {
-                when (painter.state) {
-                    is AsyncImagePainter.State.Loading -> CircularProgressIndicator(Modifier.size(16.dp))
-                    is AsyncImagePainter.State.Error -> Icon(Icons.Default.Person, contentDescription = null)
-                    else -> SubcomposeAsyncImageContent()
-                }
-            }
-        },
-        modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-    )
 }

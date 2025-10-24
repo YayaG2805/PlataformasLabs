@@ -15,4 +15,7 @@ interface LocationDao {
     fun getAll(): Flow<List<LocationEntity>>
     @Query("SELECT * FROM locations WHERE id = :id")
     fun getById(id: Int): Flow<LocationEntity?>
+
+    @Query("SELECT COUNT(*) FROM locations")
+    suspend fun count(): Int
 }
